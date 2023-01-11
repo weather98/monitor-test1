@@ -61,7 +61,7 @@ class Handler(FileSystemEventHandler):
             return file_org
 
     def readfile(self, event):
-        findTarget='info' #검색할 단어 설정
+        findTarget='error' #검색할 단어 설정
         prelogpath=monitoringlogs+'\\'+'temp'+'\\'+'new.log' #비교용 로그파일
         default_log = open(event.src_path,'r',encoding='utf-8')
         d_logs = default_log.readlines()
@@ -72,15 +72,20 @@ class Handler(FileSystemEventHandler):
         if len(d_logs) != len(c_lines): # 두 로그의 열갯수가 다르다면 
             new_lines=d_logs[-(len(d_logs)-len(c_lines)):]
             print('new lines:'+str(len(new_lines)))
+            for_break = False
             for line in new_lines:
                 l=line.split()
                 for i in range(len(l)):
                     l[i]=l[i].casefold()
                     if findTarget in l[i]:
+                        for_break = True
                         filename=time.strftime("%Y%m%d-%H%M%S")+'.log'
                         pik = open(monitoringlogs+'\\'+'temp'+'\\'+filename, 'w', encoding='utf-8')
                         pik.writelines(new_lines)
-                        Handler.send_mail(Handler.convertStr(new_lines),filename)
+                        Handler.send_mail(Handler.convertStr(new_lines),filename)                       
+                        break
+                if for_break == True:
+                    break
             shutil.copy(event.src_path,prelogpath)
         c.close()
  
