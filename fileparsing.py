@@ -60,8 +60,8 @@ class Handler(FileSystemEventHandler):
             file_org.append(getime)
             return file_org
 
-    def readfile(self, event):  # 파일 이동 함수
-        findTarget='error'
+    def readfile(self, event):
+        findTarget='info' #검색할 단어 설정
         prelogpath=monitoringlogs+'\\'+'temp'+'\\'+'new.log' #비교용 로그파일
         default_log = open(event.src_path,'r',encoding='utf-8')
         d_logs = default_log.readlines()
@@ -80,9 +80,32 @@ class Handler(FileSystemEventHandler):
                         filename=time.strftime("%Y%m%d-%H%M%S")+'.log'
                         pik = open(monitoringlogs+'\\'+'temp'+'\\'+filename, 'w', encoding='utf-8')
                         pik.writelines(new_lines)
+                        Handler.send_mail(Handler.convertStr(new_lines),filename)
             shutil.copy(event.src_path,prelogpath)
         c.close()
+ 
+    def send_mail(data,subject): #smtp 구글 메일 연동
+        import smtplib
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
 
+        smtp = smtplib.SMTP('smtp.gmail.com', 587)
+        smtp.ehlo()
+        smtp.starttls()
+        smtp.login('test@gmail.com', 'gsewmgryeogpmbvf')
+
+        msg = MIMEText(data)
+        msg['Subject'] = str(subject)
+
+        smtp.sendmail('test@gmail.com', 'test@naver.com', msg.as_string())
+
+        smtp.quit()
+
+    def convertStr(arr): #리스트 문자열로 변환 함수
+        str_R=""
+        for s in arr:
+            str_R += str(s)
+        return str_R 
 
 class Watcher:
     # 생성자
