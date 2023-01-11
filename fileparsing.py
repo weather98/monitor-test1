@@ -3,10 +3,21 @@ import os
 import shutil
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-import datetime
-import time
-monitoringlogs = "c:\\monitoringlogs\\"
+import logging
+import logging.handlers
 
+monitoringlogs = "c:\\monitoringlogs\\"
+#TODO:임시로그 파일 확장자 변하게 test
+if __name__ == '__main__':
+    logger = logging.getLogger("name")
+
+    if len(logger.handlers) > 0:
+        logger
+
+    timedfilehandler = logging.handlers.TimedRotatingFileHandler(filename=monitoringlogs+'\\'+'temp'+'\\'+'new.log', when='midnight', interval=1, encoding='utf-8')
+    timedfilehandler.suffix = "%Y%m%d"
+
+    logger.addHandler(timedfilehandler)
 class Handler(FileSystemEventHandler):
 
     def __init__(self):  # Handler 호출시 함수 실행
@@ -24,7 +35,6 @@ class Handler(FileSystemEventHandler):
 
               f'event src_path : {event.src_path}')
         Handler.readfile(self, event)
-        #TODO:임시로그파일도 변화를 주어야 하는지?
 
     def on_deleted(self, event):
         print((event.event_type, os.path.basename(event.src_path)))
@@ -32,18 +42,16 @@ class Handler(FileSystemEventHandler):
             print(('fail', os.path.basename(event.src_path)))
 
     def on_modified(self, event):
-        #TODO:파일이 존재하고 데이터 크기 변화가 있어서 작동하는지? 중복확인인지? 확장자가 log인지
+        #두번 parsing 한다.. on_modified 작동원리 공부 더 필요
         if os.path.isfile(event.src_path):
             logfile_name=os.path.basename(event.src_path)
             if logfile_name == 'text.log':          
-                print((event.event_type, os.path.basename(event.src_path)))
-                self.checkstate(event.src_path)
-
                 curr = self.checkstate(event.src_path)
                 global prev
                 if prev != None and prev != curr:
-                    print('Data modified')
+                    print(os.path.basename(event.src_path), event.event_type)
                     Handler.readfile(self, event)
+                    prev=curr # 윗단에서 실행완료후 추가 prev값을 현재값으로 갱신해주어 중복작동정지
 
     def checkstate(self, event):
         if os.path.isfile(event):
@@ -53,7 +61,7 @@ class Handler(FileSystemEventHandler):
             return file_org
 
     def readfile(self, event):  # 파일 이동 함수
-        find_Target='error'
+        findTarget='error'
         prelogpath=monitoringlogs+'\\'+'temp'+'\\'+'new.log' #비교용 로그파일
         default_log = open(event.src_path,'r',encoding='utf-8')
         d_logs = default_log.readlines()
@@ -62,17 +70,17 @@ class Handler(FileSystemEventHandler):
         c = open(prelogpath,'r',encoding='utf-8')
         c_lines = c.readlines()
         if len(d_logs) != len(c_lines): # 두 로그의 열갯수가 다르다면 
-            print(len(d_logs),len(c_lines))
-            new_lines=d_logs[-(len(d_logs)-len(c_lines)):] 
+            new_lines=d_logs[-(len(d_logs)-len(c_lines)):]
+            print('new lines:'+str(len(new_lines)))
             for line in new_lines:
                 l=line.split()
                 for i in range(len(l)):
                     l[i]=l[i].casefold()
-                    if find_Target in l[i]:
+                    if findTarget in l[i]:
                         filename=time.strftime("%Y%m%d-%H%M%S")+'.log'
                         pik = open(monitoringlogs+'\\'+'temp'+'\\'+filename, 'w', encoding='utf-8')
                         pik.writelines(new_lines)
-                        shutil.copy(event.src_path,prelogpath)
+            shutil.copy(event.src_path,prelogpath)
         c.close()
 
 
