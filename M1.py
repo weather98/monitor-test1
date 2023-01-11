@@ -89,6 +89,7 @@ class Handler(FileSystemEventHandler):
             if prev != None and prev != curr:
                 logger.info('파일이 바뀌었다 이동한다')
                 Handler.movefile(self, event)
+                prev=curr
 
     def checkstate(self, event):
         if os.path.isfile(event):
