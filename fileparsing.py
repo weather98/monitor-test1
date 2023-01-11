@@ -18,6 +18,31 @@ if __name__ == '__main__':
     timedfilehandler.suffix = "%Y%m%d"
 
     logger.addHandler(timedfilehandler)
+class logFiledestoryer:
+    from datetime import date, timedelta, time, datetime
+    days=1
+    lpath=monitoringlogs+'\\'+'temp'+'\\'
+    def listUp():
+        fileList = os.listdir(lpath)
+        return fileList
+    
+    def date_delta(base_date):
+        yy = int(base_date[:4])
+        mm = int(base_date[5:7])
+        dd = int(base_date[8:10])
+        d = date(yy,mm,dd)
+        return (date.today() - d).days
+
+    def run():
+        tod = date.today()
+        sortList = listUp()
+        sortList.sort()
+        for path in sortList:
+            if date_delta(path) > days:
+                print ("remove file : ", lpath, path)
+                removeFile = os.path.join(lpath,path)
+                os.remove(removeFile)
+
 class Handler(FileSystemEventHandler):
 
     def __init__(self):  # Handler 호출시 함수 실행
@@ -72,8 +97,8 @@ class Handler(FileSystemEventHandler):
         if len(d_logs) != len(c_lines): # 두 로그의 열갯수가 다르다면 
             new_lines=d_logs[-(len(d_logs)-len(c_lines)):]
             print('new lines:'+str(len(new_lines)))
-            for_break = False
-            for line in new_lines:
+            for line in new_lines:  #새로 기록된 내용에서 한번이라도 일치하면 새로운 기록된 내용 모두 보관하고 ,보내고 반복문 break 
+                for_break = False
                 l=line.split()
                 for i in range(len(l)):
                     l[i]=l[i].casefold()
