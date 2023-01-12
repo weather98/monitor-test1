@@ -3,21 +3,9 @@ import os
 import shutil
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-import logging
-import logging.handlers
+import re
 
 monitoringlogs = "c:\\monitoringlogs\\"
-#TODO:임시로그 파일 확장자 변하게 test
-if __name__ == '__main__':
-    logger = logging.getLogger("name")
-
-    if len(logger.handlers) > 0:
-        logger
-
-    timedfilehandler = logging.handlers.TimedRotatingFileHandler(filename=monitoringlogs+'\\'+'temp'+'\\'+'new.log', when='midnight', interval=1, encoding='utf-8')
-    timedfilehandler.suffix = "%Y%m%d"
-
-    logger.addHandler(timedfilehandler)
 class logFiledestoryer:
     from datetime import date, timedelta, time, datetime
     days=1
@@ -87,33 +75,51 @@ class Handler(FileSystemEventHandler):
 
     def readfile(self, event):
         findTarget='error' #검색할 단어 설정
-        prelogpath=monitoringlogs+'\\'+'temp'+'\\'+'new.log' #비교용 로그파일
-        default_log = open(event.src_path,'r',encoding='utf-8')
-        d_logs = default_log.readlines()
-        if not os.path.isfile(prelogpath): # /temp/new.log 없으면 생성
-            c = open(prelogpath,'w',encoding='utf-8')
-        c = open(prelogpath,'r',encoding='utf-8')
-        c_lines = c.readlines()
-        if len(d_logs) != len(c_lines): # 두 로그의 열갯수가 다르다면 
-            new_lines=d_logs[-(len(d_logs)-len(c_lines)):]
-            print('new lines:'+str(len(new_lines)))
-            for line in new_lines:  #새로 기록된 내용에서 한번이라도 일치하면 새로운 기록된 내용 모두 보관하고 ,보내고 반복문 break 
-                for_break = False
-                l=line.split()
-                for i in range(len(l)):
-                    l[i]=l[i].casefold()
-                    if findTarget in l[i]:
-                        for_break = True
-                        filename=time.strftime("%Y%m%d-%H%M%S")+'.log'
-                        pik = open(monitoringlogs+'\\'+'temp'+'\\'+filename, 'w', encoding='utf-8')
-                        pik.writelines(new_lines)
-                        Handler.send_mail(Handler.convertStr(new_lines),filename)                       
+        prelog_path=monitoringlogs+'\\'+'temp'+'\\'+'pre.log' #비교용 로그파일
+        textlog_path = open(event.src_path,'r',encoding='utf-8')
+        t_logs = textlog_path.readlines()
+        if not os.path.isfile(prelog_path): # /temp/new.log 없으면 생성
+            p = open(prelog_path,'w',encoding='utf-8')
+        p = open(prelog_path,'r',encoding='utf-8')
+        p_logs = p.readlines()
+        if len(t_logs) != len(p_logs): # 두 로그의 열갯수가 다르다면 
+            new_lines=t_logs[-(len(t_logs)-len(p_logs)):]
+            print(len(t_logs)-len(p_logs))
+            if (len(t_logs)-len(p_logs)) > 0:
+                print('new lines:'+str(len(new_lines)))
+                for line in new_lines:  #새로 기록된 내용에서 한번이라도 일치하면 새로운 기록된 내용 모두 보관하고 ,보내고 반복문 break 
+                    for_break = False
+                    l=line.split()
+                    for i in range(len(l)):
+                        l[i]=l[i].casefold()
+                        if findTarget in l[i]:
+                            for_break = True
+                            Handler.createTemp_Log(new_lines)                   
+                            break
+                    if for_break == True:
                         break
-                if for_break == True:
-                    break
-            shutil.copy(event.src_path,prelogpath)
-        c.close()
- 
+            #모니터링 로그의 수가 더 적어졌다면 어떤 조건에 의해 기존참조파일 자체가 갱신됐으므로 내용자체를 메일전송        
+            elif (len(t_logs)-len(p_logs)) < 0 : 
+                num = Handler.find_prelog(os.path.dirname(prelog_path))
+                date_prelog=os.path.dirname(prelog_path)+'\\'+time.strftime("%Y%m%d")+' pre'+str(num+1)+'.log'
+                shutil.copy2(prelog_path, date_prelog)
+                Handler.createTemp_Log(t_logs)
+
+            shutil.copy(event.src_path,prelog_path)
+        p.close()
+
+    def createTemp_Log(content):
+        filename=time.strftime("%Y%m%d-%H%M%S")+'.log'
+        pik = open(monitoringlogs+'\\'+'temp'+'\\'+filename, 'w', encoding='utf-8')
+        pik.writelines(content)
+        Handler.send_mail(Handler.convertStr(content),filename)  
+
+    def convertStr(arr): #리스트 문자열로 변환 함수
+        str_R=""
+        for s in arr:
+            str_R += str(s)
+        return str_R 
+
     def send_mail(data,subject): #smtp 구글 메일 연동
         import smtplib
         from email.mime.text import MIMEText
@@ -124,18 +130,23 @@ class Handler(FileSystemEventHandler):
         smtp.starttls()
         smtp.login('test@gmail.com', 'gsewmgryeogpmbvf')
 
-        msg = MIMEText(data)
-        msg['Subject'] = str(subject)
+        msg = MIMEText(data) #메일 내용
+        msg['Subject'] = str(subject) #메일 제목
 
         smtp.sendmail('test@gmail.com', 'test@naver.com', msg.as_string())
-
         smtp.quit()
 
-    def convertStr(arr): #리스트 문자열로 변환 함수
-        str_R=""
-        for s in arr:
-            str_R += str(s)
-        return str_R 
+    def find_prelog(path):
+        files=os.listdir(path)
+        list=[]
+        for file in files:
+            full_path = path+'\\'+file            
+            rex=re.match('^20\d{6}[ ]pre(\d{0,2})[.]log+',os.path.basename(full_path))
+            if rex:
+                x=rex.group()
+                list.append(x)
+
+        return len(list)
 
 class Watcher:
     # 생성자
