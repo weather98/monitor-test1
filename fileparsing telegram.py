@@ -3,7 +3,6 @@ import os
 import shutil
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-import re
 from tg import sender
 
 monitoringlogs = "c:\\monitoringlogs\\"
@@ -99,7 +98,7 @@ class Handler(FileSystemEventHandler):
                             break
                     if for_break == True:
                         break
-            #모니터링 로그의 수가 더 적어졌다면 어떤 조건에 의해 기존참조파일 자체가 갱신됐으므로 내용자체를 메일전송        
+            #모니터링 로그의 수가 더 적어졌다면 어떤 조건에 의해 기존참조파일 자체가 갱신됐으므로 내용자체를 메세지 전송        
             elif (len(t_logs)-len(p_logs)) < 0 : 
                 num = Handler.find_prelog(os.path.dirname(prelog_path))
                 date_prelog=os.path.dirname(prelog_path)+'\\'+time.strftime("%Y%m%d")+' pre'+str(num+1)+'.log'
@@ -125,12 +124,9 @@ class Handler(FileSystemEventHandler):
         files=os.listdir(path)
         list=[]
         for file in files:
-            full_path = path+'\\'+file            
-            rex=re.match('^20\d{6}[ ]pre(\d{0,2})[.]log+',os.path.basename(full_path))
-            if rex:
-                x=rex.group()
-                list.append(x)
-
+            t=time.strftime("%Y%m%d")+' pre'
+            if t in file: 
+                list.append(file)
         return len(list)
 
 class Watcher:
