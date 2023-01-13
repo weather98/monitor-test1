@@ -3,7 +3,6 @@ import os
 import shutil
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-import re
 
 monitoringlogs = "c:\\monitoringlogs\\"
 class logFiledestoryer:
@@ -140,12 +139,9 @@ class Handler(FileSystemEventHandler):
         files=os.listdir(path)
         list=[]
         for file in files:
-            full_path = path+'\\'+file            
-            rex=re.match('^20\d{6}[ ]pre(\d{0,2})[.]log+',os.path.basename(full_path))
-            if rex:
-                x=rex.group()
-                list.append(x)
-
+            t=time.strftime("%Y%m%d")+' pre'
+            if t in file: 
+                list.append(file)
         return len(list)
 
 class Watcher:
