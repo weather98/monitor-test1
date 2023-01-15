@@ -3,31 +3,24 @@ import os
 import shutil
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+from datetime import date,timedelta
 
 monitoringlogs = "c:\\monitoringlogs\\"
 class logFiledestoryer:
-    from datetime import date, timedelta, time, datetime
-    days=1
     lpath=monitoringlogs+'\\'+'temp'+'\\'
+    from datetime import date, timedelta, time, datetime
     def listUp():
-        fileList = os.listdir(lpath)
+        fileList = os.listdir(logFiledestoryer.lpath)
         return fileList
-    
-    def date_delta(base_date):
-        yy = int(base_date[:4])
-        mm = int(base_date[5:7])
-        dd = int(base_date[8:10])
-        d = date(yy,mm,dd)
-        return (date.today() - d).days
 
     def run():
         tod = date.today()
-        sortList = listUp()
+        sortList = logFiledestoryer.listUp()
         sortList.sort()
         for path in sortList:
-            if date_delta(path) > days:
-                print ("remove file : ", lpath, path)
-                removeFile = os.path.join(lpath,path)
+            if date.today()-md >= timedelta(weeks=1):
+                print ("remove file : ", logFiledestoryer.lpath, path)
+                removeFile = os.path.join(logFiledestoryer.lpath,path)
                 os.remove(removeFile)
 
 class Handler(FileSystemEventHandler):
@@ -179,4 +172,5 @@ class Watcher:
 
 
 myWatcher = Watcher(monitoringlogs)
+logFiledestoryer.run()
 myWatcher.run()
