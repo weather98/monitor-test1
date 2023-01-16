@@ -17,10 +17,8 @@ class logFiledestoryer:
         sortList = logFiledestoryer.listUp()
         sortList.sort()
         for path in sortList:
-            mtime=os.path.getmtime(logFiledestoryer.lpath+path)
-            md=datetime.fromtimestamp(mtime)
-            #datetime.today()를 date.today() 로 변환법 알아내기 날짜만 뽑아낼것
-            if datetime.today()-md >= timedelta(weeks=1):
+            md=date.fromtimestamp(os.path.getmtime(logFiledestoryer.lpath+path))
+            if date.today()-md >= timedelta(weeks=1):
                 print ("remove file : ", logFiledestoryer.lpath, path)
                 removeFile = os.path.join(logFiledestoryer.lpath,path)
                 os.remove(removeFile)
