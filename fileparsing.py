@@ -3,22 +3,24 @@ import os
 import shutil
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-from datetime import date,timedelta
+from datetime import date, timedelta, datetime
 
 monitoringlogs = "c:\\monitoringlogs\\"
 class logFiledestoryer:
-    lpath=monitoringlogs+'\\'+'temp'+'\\'
+    lpath=monitoringlogs+'temp'+'\\'
     from datetime import date, timedelta, time, datetime
     def listUp():
         fileList = os.listdir(logFiledestoryer.lpath)
         return fileList
 
     def run():
-        tod = date.today()
         sortList = logFiledestoryer.listUp()
         sortList.sort()
         for path in sortList:
-            if date.today()-md >= timedelta(weeks=1):
+            mtime=os.path.getmtime(logFiledestoryer.lpath+path)
+            md=datetime.fromtimestamp(mtime)
+            #datetime.today()를 date.today() 로 변환법 알아내기 날짜만 뽑아낼것
+            if datetime.today()-md >= timedelta(weeks=1):
                 print ("remove file : ", logFiledestoryer.lpath, path)
                 removeFile = os.path.join(logFiledestoryer.lpath,path)
                 os.remove(removeFile)
